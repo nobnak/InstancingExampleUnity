@@ -4,14 +4,14 @@ using System.Runtime.InteropServices;
 
 namespace Instancing {
 
-	public class MeshInstancing : MonoBehaviour {
+	public class Instancing : MonoBehaviour {
 		public const string CS_INDEX_BUFFER = "indexBuf";
 		public const string CS_VERTEX_BUFFER = "vertexBuf";
 		public const string CS_UV_BUFFER = "uvBuf";
 		public const string CS_WORLD_BUFFER = "worldBuf";
 
-		public GameObject hanafab;
-		public int nHanas;
+		public GameObject prefab;
+		public int count;
 
 		private ComputeBuffer _indexBuf;
 		private ComputeBuffer _vertexBuf;
@@ -29,7 +29,7 @@ namespace Instancing {
 		}
 
 		void Awake() {
-			var mf = hanafab.GetComponent<MeshFilter>();
+			var mf = prefab.GetComponent<MeshFilter>();
 			var mesh = mf.sharedMesh;
 
 			_indexBuf = new ComputeBuffer(mesh.triangles.Length, Marshal.SizeOf(typeof(uint)));
@@ -43,12 +43,12 @@ namespace Instancing {
 
 			var gofab = new GameObject("Position");
 			gofab.hideFlags = HideFlags.HideAndDontSave;
-			_trs = GenerateRandom(gofab, nHanas);
+			_trs = GenerateRandom(gofab, count);
 			_worlds = new float[16 * _trs.Length];
 			_worldBuf = new ComputeBuffer(_trs.Length, 4 * 16);
 			UpdateWorlds();
 
-			_mat = new Material(hanafab.renderer.sharedMaterial);
+			_mat = new Material(prefab.renderer.sharedMaterial);
 			_mat.SetBuffer(CS_INDEX_BUFFER, _indexBuf);
 			_mat.SetBuffer(CS_VERTEX_BUFFER, _vertexBuf);
 			_mat.SetBuffer(CS_UV_BUFFER, _uvBuf);
@@ -95,8 +95,11 @@ namespace Instancing {
 
 		Transform[] GenerateRandom(GameObject prefab, int count) {
 			var trs = new Transform[count];
-			for (var i = 0; i < count; i++)
-				trs[i] = Generate(prefab, 10f * Random.insideUnitSphere, Random.rotationUniform, Random.Range(0.7f, 2f) * Vector3.one);
+			var range = 10f;
+			for (var i = 0; i < count; i++) {
+				var pos = new Vector3(Random.Range(-range, range), Random.Range(-range, range), 0f);
+				trs[i] = Generate(prefab, pos, Random.rotationUniform, Random.Range(0.7f, 2f) * Vector3.one);
+			}
 			return trs;
 		}
 

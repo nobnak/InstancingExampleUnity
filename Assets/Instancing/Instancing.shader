@@ -1,4 +1,4 @@
-	Shader "Custom/MeshInstancing" {
+	Shader "Custom/Instancing" {
 	Properties {
 		_MainTex ("Base (RGB)", 2D) = "white" {}
 	}
@@ -13,13 +13,11 @@
 			#pragma fragment frag
 			#pragma target 5.0
 			#include "UnityCG.cginc"
-			#include "Lighting.cginc"
 
 			sampler2D _MainTex;
 
 			struct vs2ps {
 				float4 vertex : POSITION;
-				float3 normal : NORMAL;
 				float2 uv : TEXCOORD0;
 			};
 			
