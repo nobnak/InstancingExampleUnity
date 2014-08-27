@@ -12,6 +12,8 @@ namespace Instancing {
 
 		public GameObject prefab;
 		public int count;
+		public float range = 10f;
+		public float rotationSpeed = 90f;
 
 		private ComputeBuffer _indexBuf;
 		private ComputeBuffer _vertexBuf;
@@ -32,20 +34,20 @@ namespace Instancing {
 			var mf = prefab.GetComponent<MeshFilter>();
 			var mesh = mf.sharedMesh;
 
-			_indexBuf = new ComputeBuffer(mesh.triangles.Length, Marshal.SizeOf(typeof(uint)));
+			_indexBuf = new ComputeBuffer(mesh.triangles.Length, Marshal.SizeOf(mesh.triangles[0]));
 			_indexBuf.SetData(mesh.triangles);
 			
-			_vertexBuf = new ComputeBuffer(mesh.vertices.Length, Marshal.SizeOf(typeof(Vector3)));
+			_vertexBuf = new ComputeBuffer(mesh.vertices.Length, Marshal.SizeOf(mesh.vertices[0]));
 			_vertexBuf.SetData(mesh.vertices);
 
-			_uvBuf = new ComputeBuffer(mesh.uv.Length, Marshal.SizeOf(typeof(Vector2)));
+			_uvBuf = new ComputeBuffer(mesh.uv.Length, Marshal.SizeOf(mesh.uv[0]));
 			_uvBuf.SetData(mesh.uv);
 
 			var gofab = new GameObject("Position");
 			gofab.hideFlags = HideFlags.HideAndDontSave;
 			_trs = GenerateRandom(gofab, count);
 			_worlds = new float[16 * _trs.Length];
-			_worldBuf = new ComputeBuffer(_trs.Length, 4 * 16);
+			_worldBuf = new ComputeBuffer(_trs.Length, 16 * Marshal.SizeOf(_worlds[0]));
 			UpdateWorlds();
 
 			_mat = new Material(prefab.renderer.sharedMaterial);
@@ -63,6 +65,7 @@ namespace Instancing {
 		}
 
 		void UpdateWorlds() {
+			// HLSL : colum major matrix
 			var c = 0;
 			for (var i = 0; i < _trs.Length; i++) {
 				var w = _trs[i].localToWorldMatrix;
@@ -87,7 +90,7 @@ namespace Instancing {
 		}
 
 		void UpdateRotations() {
-			var rot = Quaternion.Euler(0f, 90f * Time.deltaTime, 0f);
+			var rot = Quaternion.Euler(0f, rotationSpeed * Time.deltaTime, 0f);
 			foreach (var tr in _trs) {
 				tr.localRotation = rot * tr.localRotation;
 			}
@@ -95,10 +98,9 @@ namespace Instancing {
 
 		Transform[] GenerateRandom(GameObject prefab, int count) {
 			var trs = new Transform[count];
-			var range = 10f;
 			for (var i = 0; i < count; i++) {
 				var pos = new Vector3(Random.Range(-range, range), Random.Range(-range, range), 0f);
-				trs[i] = Generate(prefab, pos, Random.rotationUniform, Random.Range(0.7f, 2f) * Vector3.one);
+				trs[i] = Generate(prefab, pos, Random.rotationUniform, Random.Range(0.7f, 2f) * prefab.transform.localScale);
 			}
 			return trs;
 		}
